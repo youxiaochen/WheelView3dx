@@ -1,8 +1,7 @@
 package chen.you.wheelviewtest;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.recyclerview.widget.RecyclerView;
-import chen.you.widget.WheelView;
+import chen.you.adapter.WheelView;
 
 import android.os.Bundle;
 import android.widget.TextView;

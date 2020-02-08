@@ -62,7 +62,7 @@
         </LinearLayout>
 
 
-        <chen.you.widget.WheelView
+        <chen.you.adapter.WheelView
             android:id="@+id/wv_city"
             android:layout_width="0dp"
             android:layout_weight="1"
@@ -73,7 +73,7 @@
             app:wheelGravity="left"
             app:wheelTextSize="18sp"/>
 
-        <chen.you.widget.WheelView
+        <chen.you.adapter.WheelView
             android:id="@+id/wv_county"
             android:layout_width="0dp"
             android:layout_weight="1"
@@ -84,7 +84,7 @@
             app:wheelGravity="center"
             app:wheelTextSize="18sp"/>
 
-        <chen.you.widget.WheelView
+        <chen.you.adapter.WheelView
             android:id="@+id/wv_name"
             android:layout_width="0dp"
             android:layout_weight="1"
@@ -105,7 +105,7 @@
         android:textSize="18sp"
         android:text="水平布局88"/>
 
-    <chen.you.widget.WheelView
+    <chen.you.adapter.WheelView
         android:id="@+id/wv_number"
         android:layout_width="wrap_content"
         android:layout_height="60dp"

@@ -1,4 +1,4 @@
-package chen.you.widget;
+package chen.you.adapter;
 
 import android.graphics.Canvas;
 import android.graphics.Paint;

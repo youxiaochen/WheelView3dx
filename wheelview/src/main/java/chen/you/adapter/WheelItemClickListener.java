@@ -1,4 +1,4 @@
-package chen.you.widget;
+package chen.you.adapter;
 
 import android.content.Context;
 import android.view.GestureDetector;

@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingLeft="80dp">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:textColor="#ff00ff"
+            android:gravity="center"
+            android:text="靠左立体"/>
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:textColor="#ff00ff"
+            android:gravity="center"
+            android:text="居中立体"/>
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:textColor="#ff00ff"
+            android:gravity="center"
+            android:text="靠右立体"/>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <LinearLayout
+            android:layout_width="80dp"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView android:id="@+id/tv_city"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:hint="选择的市"/>
+
+            <TextView android:id="@+id/tv_county"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="50dp"
+                android:hint="选择的县"/>
+
+        </LinearLayout>
+
+
+        <chen.you.widget.WheelView
+            android:id="@+id/wv_city"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            app:wheelItemCount="4"
+            app:wheelItemSize="28dp"
+            app:wheelDividerSize="30dp"
+            app:wheelGravity="left"
+            app:wheelTextSize="18sp"/>
+
+        <chen.you.widget.WheelView
+            android:id="@+id/wv_county"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            app:wheelItemCount="4"
+            app:wheelItemSize="28dp"
+            app:wheelDividerSize="30dp"
+            app:wheelGravity="center"
+            app:wheelTextSize="18sp"/>
+
+        <chen.you.widget.WheelView
+            android:id="@+id/wv_name"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            app:wheelItemCount="4"
+            app:wheelItemSize="28dp"
+            app:wheelDividerSize="30dp"
+            app:wheelGravity="right"
+            app:wheelTextSize="18sp"/>
+
+    </LinearLayout>
+
+    <TextView android:id="@+id/tv_number"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="50dp"
+        android:textSize="18sp"
+        android:text="水平布局88"/>
+
+    <chen.you.widget.WheelView
+        android:id="@+id/wv_number"
+        android:layout_width="wrap_content"
+        android:layout_height="60dp"
+        android:layout_gravity="center_horizontal"
+        app:wheelItemCount="3"
+        app:wheelItemSize="45dp"
+        app:wheelDividerSize="48dp"
+        app:wheelOrientation="horizontal"
+        app:wheelTextSize="25sp"/>
+
+</LinearLayout>

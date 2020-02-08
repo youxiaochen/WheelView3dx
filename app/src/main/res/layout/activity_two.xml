@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+  <!--  <chen.you.widget.WheelView
+        android:id="@+id/wv_city"
+        android:layout_width="0dp"
+        android:layout_weight="1"
+        android:layout_height="wrap_content"
+        app:wheelItemCount="4"
+        app:wheelItemSize="28dp"
+        app:wheelDividerSize="30dp"
+        app:wheelGravity="left"
+        app:gravityCoefficient="0.6"
+        app:wheelTextSize="18sp"/>-->
+
+</LinearLayout>

@@ -2,6 +2,7 @@ package chen.you.adapter;
 
 import android.content.Context;
 import android.content.res.TypedArray;
+import android.database.DataSetObserver;
 import android.graphics.Color;
 import android.util.AttributeSet;
 import android.widget.FrameLayout;
@@ -75,7 +76,8 @@ public class WheelView extends FrameLayout {
     /**
      * adapter
      */
-    private WheelAdapter adapter;
+    private WheelAdapter mAdapter;
+    private WheelViewObserver observer;
 
     private WheelItemClickListener itemClickListener;
 
@@ -145,15 +147,28 @@ public class WheelView extends FrameLayout {
     }
 
     public void setAdapter(WheelAdapter adapter) {
-        this.selectedPosition = -1;
-        this.lastSelectedPosition = -1;
-        this.wheelAdapter.adapter = adapter;
-        adapter.wheelViewAdapter = wheelAdapter;
-        this.wheelAdapter.notifyDataSetChanged();
+        if (mAdapter != null) {
+            mAdapter.setWheelViewObserver(null);
+        }
+        mAdapter = adapter;
+        if (mAdapter != null) {
+            if (observer == null) {
+                observer = new WheelViewObserver();
+            }
+            mAdapter.setWheelViewObserver(observer);
+            this.selectedPosition = -1;
+            this.lastSelectedPosition = -1;
+            this.wheelAdapter.adapter = adapter;
+            this.wheelAdapter.notifyDataSetChanged();
+        }
     }
 
     public WheelAdapter getAdapter() {
-        return adapter;
+        return mAdapter;
+    }
+
+    private void dataSetChanged() {
+        this.wheelAdapter.notifyDataSetChanged();
     }
 
     public void setCurrentItem(int position) {
@@ -205,21 +220,40 @@ public class WheelView extends FrameLayout {
         void onItemClick(WheelView wheelView, int centerPosition);
     }
 
+    private class WheelViewObserver extends DataSetObserver {
+        @Override
+        public void onChanged() {
+            dataSetChanged();
+        }
+
+        @Override
+        public void onInvalidated() {
+            dataSetChanged();
+        }
+    }
+
     /**
      * wheel adapter
-     * by you
      */
     public static abstract class WheelAdapter {
 
-        WheelViewAdapter wheelViewAdapter;
+        private DataSetObserver wheelObserver;
+
+        void setWheelViewObserver(DataSetObserver observer) {
+            synchronized (this) {
+                wheelObserver = observer;
+            }
+        }
 
         protected abstract int getItemCount();
 
         protected abstract String getItem(int index);
 
         public final void notifyDataSetChanged() {
-            if (wheelViewAdapter != null) {
-                wheelViewAdapter.notifyDataSetChanged();
+            synchronized (this) {
+                if (wheelObserver != null) {
+                    wheelObserver.onChanged();
+                }
             }
         }
     }

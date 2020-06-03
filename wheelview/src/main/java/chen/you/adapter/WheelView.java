@@ -176,14 +176,13 @@ public class WheelView extends FrameLayout {
     }
 
     public int getCurrentItem() {
-        int firstPosition = layoutManager.findFirstVisibleItemPosition();
         int adapterCount = layoutManager.getItemCount();
-        if (firstPosition >= adapterCount) return 0; //如果当前位置大于整个适配器大小,刷新时RecyclerView会回到第0个位置
+        if (wheelDecoration.centerItemPosition >= adapterCount) return 0; //如果当前位置大于整个适配器大小,刷新时RecyclerView会回到第0个位置
         int wheelCount = adapterCount - itemCount * 2;
-        if (firstPosition >= wheelCount) {
+        if (wheelDecoration.centerItemPosition >= wheelCount) {
             return wheelCount -1;
         }
-        return firstPosition;
+        return wheelDecoration.centerItemPosition;
     }
 
     private OnItemSelectedListener listener;

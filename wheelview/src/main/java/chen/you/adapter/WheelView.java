@@ -13,7 +13,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 /**
  * Created by you on 2019/9/25.
- * 作QQ:86207610
+ * 作QQ:86207610 
  */
 
 public class WheelView extends FrameLayout {

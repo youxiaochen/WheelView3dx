@@ -176,6 +176,12 @@ public class WheelView extends FrameLayout {
     }
 
     public int getCurrentItem() {
+        //  int firstPosition = layoutManager.findFirstVisibleItemPosition();
+        //  int adapterPosition;
+        //  if (mAdapter != null && firstPosition > (adapterPosition = mAdapter.getItemCount() -1)) {
+        //      return adapterPosition;
+        //  }
+        //  需要实实的更新,请使用上面的
         return wheelDecoration.centerItemPosition;
     }
 

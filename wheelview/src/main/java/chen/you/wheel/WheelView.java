@@ -1,4 +1,4 @@
-package chen.you.adapter;
+package chen.you.wheel;
 
 import android.content.Context;
 import android.content.res.TypedArray;
@@ -119,17 +119,27 @@ public class WheelView extends FrameLayout {
     private void initRecyclerView(Context context) {
         mRecyclerView = new RecyclerView(context);
         mRecyclerView.setOverScrollMode(OVER_SCROLL_NEVER);
-        int totolItemSize = (itemCount * 2 + 1) * itemSize;
         layoutManager = new LinearLayoutManager(context);
-        layoutManager.setOrientation(orientation == WHEEL_VERTICAL ?
-                LinearLayoutManager.VERTICAL : LinearLayoutManager.HORIZONTAL);
+        layoutManager.setOrientation(orientation == WHEEL_VERTICAL ? LinearLayoutManager.VERTICAL : LinearLayoutManager.HORIZONTAL);
         mRecyclerView.setLayoutManager(layoutManager);
         //让滑动结束时都能定到中心位置
         new LinearSnapHelper().attachToRecyclerView(mRecyclerView);
-        this.addView(mRecyclerView, WheelUtils.createLayoutParams(orientation, totolItemSize));
-
-        wheelAdapter = new WheelViewAdapter(orientation, itemSize, itemCount);
-        wheelDecoration = new SimpleWheelDecoration(wheelAdapter, gravity, textColor, textColorCenter, textSize, dividerColor, dividerSize);
+        //通过计算,在item3个或者以上的时候,旋转后的WheelView高度会比实际高度小一个item的大小
+        //计算方式可以详见博客中的原理图,计算出三角形的腰长即为半径
+        //item在6个或者以上时,旋转后的高度会相差大于2, 因此3-5个时的效果最好,不会留过多的空白区域
+        //此时防止WheelView旋转后的空白区域过多,可以适当修改大小, 适配器中头和尾添加的itemCount - 1
+        boolean isGreaterThan = itemCount > 2;
+        int showItemCount = isGreaterThan ? itemCount - 1 : itemCount;
+        int totalItemSize = (showItemCount * 2 + 1) * itemSize;
+        if (isGreaterThan) {
+            //RecyclerView高度或者水平时的宽度添加2个像素是为了在减掉显示的一个item时,
+            // 超出RecyclerView显示区域刚好可以再显示头部一个和尾部一个item
+            totalItemSize += 2;
+        }
+        float itemDegree = 180.f / (itemCount * 2 + 1);
+        super.addView(mRecyclerView, WheelUtils.createLayoutParams(orientation, totalItemSize));
+        wheelAdapter = new WheelViewAdapter(orientation, itemSize, showItemCount);
+        wheelDecoration = new SimpleWheelDecoration(wheelAdapter, showItemCount, itemDegree, gravity, textColor, textColorCenter, textSize, dividerColor, dividerSize);
         mRecyclerView.addItemDecoration(wheelDecoration);
         mRecyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override

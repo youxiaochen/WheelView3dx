@@ -1,4 +1,4 @@
-package chen.you.adapter;
+package chen.you.wheel;
 
 import android.graphics.Camera;
 import android.graphics.Canvas;
@@ -22,7 +22,7 @@ abstract class WheelDecoration extends RecyclerView.ItemDecoration {
     static final int GRAVITY_CENTER = 2;
     static final int GRAVITY_RIGHT = 3;
     /**
-     * 此参数影响左右旋转对齐时的效果,系数越大,越明显,自己体会......(0-1之间)
+     * 此参数影响左右旋转对齐时的效果,系数越大,越明显(0-1之间)
      */
     static final float DEF_SCALE = 0.75F;
     /**
@@ -30,9 +30,9 @@ abstract class WheelDecoration extends RecyclerView.ItemDecoration {
      */
     public static final int IDLE_POSITION = -1;
     /**
-     * 显示的item数量
+     * 实际调试显示的itemCount, 由于旋转后的高度比实际高度小,因此对实际显示的高度调整数量
      */
-    final int itemCount;
+    final int showItemCount;
     /**
      * 每个item大小,  垂直布局时为item的高度, 水平布局时为item的宽度
      */
@@ -43,7 +43,7 @@ abstract class WheelDecoration extends RecyclerView.ItemDecoration {
      */
     final float itemDegree;
     /**
-     * 滑动轴的半径
+     * 滑动轴的半径,旋转的偏移需要通过此参数和itemDegree来计算
      */
     final float wheelRadio;
     /**
@@ -64,11 +64,11 @@ abstract class WheelDecoration extends RecyclerView.ItemDecoration {
 
     int centerItemPosition = IDLE_POSITION;
 
-    WheelDecoration(int itemCount, int itemSize, int gravity) {
-        this.itemCount = itemCount;
+    WheelDecoration(int showItemCount, float itemDegree, int itemSize, int gravity) {
+        this.showItemCount = showItemCount;
         this.itemSize = itemSize;
         this.halfItemHeight = itemSize / 2.0f;
-        this.itemDegree = 180.f / (itemCount * 2 + 1);
+        this.itemDegree = itemDegree;
         this.gravity = gravity;
         wheelRadio = (float) WheelUtils.radianToRadio(itemSize, itemDegree);
 
@@ -88,15 +88,17 @@ abstract class WheelDecoration extends RecyclerView.ItemDecoration {
         int endPosition = llm.findLastVisibleItemPosition();
         hasCenterItem = false;
         for (int itemPosition = startPosition; itemPosition <= endPosition; itemPosition++) {
-            if (itemPosition < itemCount) continue;//itemCount为空白项,不考虑
-            if (itemPosition >= llm.getItemCount() - itemCount) break;//超过列表的也是空白项
             //Log.i("you", "onDraw currentItem... " + itemPosition);
             View itemView = llm.findViewByPosition(itemPosition);
+            if (itemView == null) continue;
+            int adapterPostion = parent.getChildAdapterPosition(itemView);
+            if (adapterPostion < showItemCount) continue;//itemCount为空白项,不考虑
+            if (adapterPostion >= llm.getItemCount() - showItemCount) break;//超过列表的也是空白项
             Rect itemRect = new Rect(itemView.getLeft(), itemView.getTop(), itemView.getRight(), itemView.getBottom());
             if (isVertical) {//垂直布局, 还需要靠对齐方式
-                drawVerticalItem(c, itemRect, itemPosition, translateX(parentRect), parentRect.exactCenterY());
+                drawVerticalItem(c, itemRect, adapterPostion, translateX(parentRect), parentRect.exactCenterY());
             } else {//水平布局
-                drawHorizontalItem(c, itemRect, itemPosition, parentRect.exactCenterX(), parentRect.exactCenterY());
+                drawHorizontalItem(c, itemRect, adapterPostion, parentRect.exactCenterX(), parentRect.exactCenterY());
             }
         }
         drawDivider(c, parentRect, isVertical);
@@ -126,7 +128,7 @@ abstract class WheelDecoration extends RecyclerView.ItemDecoration {
      * @param parentCenterY RecyclerView的中心Y点
      */
     void drawVerticalItem(Canvas c, Rect rect, int position, float translateX, float parentCenterY) {
-        int realPosition = position - itemCount;//数据中的实际位置
+        int realPosition = position - showItemCount;//数据中的实际位置
         float itemCenterY = rect.exactCenterY();
         float scrollOffY = itemCenterY - parentCenterY;
         float rotateDegreeX = scrollOffY * itemDegree / itemSize;//垂直布局时要以X轴为中心旋转
@@ -173,7 +175,7 @@ abstract class WheelDecoration extends RecyclerView.ItemDecoration {
      * @param parentCenterY RecyclerView的中心Y点
      */
     void drawHorizontalItem(Canvas c, Rect rect, int position, float parentCenterX, float parentCenterY) {
-        int realPosition = position - itemCount;
+        int realPosition = position - showItemCount;
         float itemCenterX = rect.exactCenterX();
         float scrollOffX = itemCenterX - parentCenterX;
         float rotateDegreeY = scrollOffX * itemDegree / itemSize;//垂直布局时要以Y轴为中心旋转

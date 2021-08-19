@@ -1,9 +1,10 @@
 package chen.you.wheelviewtest;
 
 import androidx.appcompat.app.AppCompatActivity;
-import chen.you.adapter.WheelView;
+import chen.you.wheel.WheelView;
 
 import android.os.Bundle;
+import android.widget.ListView;
 import android.widget.TextView;
 
 import java.util.ArrayList;
@@ -36,6 +37,7 @@ public class MainActivity extends AppCompatActivity {
         tv_city = findViewById(R.id.tv_city);
         tv_county = findViewById(R.id.tv_county);
         tv_number = findViewById(R.id.tv_number);
+
 
         /* 市滑轮控件 */
 

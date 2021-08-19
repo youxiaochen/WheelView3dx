@@ -1,4 +1,4 @@
-package chen.you.adapter;
+package chen.you.wheel;
 
 import android.view.View;
 

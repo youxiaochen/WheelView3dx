@@ -1,7 +1,9 @@
-package chen.you.adapter;
+package chen.you.wheel;
 
+import android.graphics.PointF;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
 
 /**
  * Created by you on 2019/9/25.
@@ -12,6 +14,24 @@ final class WheelUtils {
 
     private WheelUtils() {}
 
+    static int sss(int itemSize) {
+        return 0;
+    }
+
+    /**
+     * 通过三角一边和弧度计算出半径大小
+     * @param itemSize
+     * @param degree
+     * @return
+     */
+    static PointF triangleDegree(int itemSize, float degree) {
+        double radians = Math.toRadians(degree / 2.0f);
+        float sizeLength = itemSize / 2.f;
+        float height = (float) (sizeLength / Math.tan(radians));
+        float radius = (float) (sizeLength / Math.sin(radians));
+        return new PointF(height, radius);
+    }
+
     /**
      * 根据item的大小(弧的长度),和item对应的旋转角度,计算出滑轮轴的半径
      * @param radian
@@ -19,7 +39,7 @@ final class WheelUtils {
      * @return
      */
     static double radianToRadio(int radian, float degree) {
-        return radian * 180d / (degree * Math.PI);
+        return (radian / 2.f) / Math.tan(Math.toRadians(degree / 2.f));
     }
 
     /**
@@ -31,11 +51,11 @@ final class WheelUtils {
      * @param size
      * @return
      */
-    static ViewGroup.LayoutParams createLayoutParams(int orientation, int size) {
+    static FrameLayout.LayoutParams createLayoutParams(int orientation, int size) {
         if (orientation == WheelView.WHEEL_VERTICAL) {
-            return new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, size);
+            return new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, size);
         } else {
-            return new ViewGroup.LayoutParams(size, ViewGroup.LayoutParams.MATCH_PARENT);
+            return new FrameLayout.LayoutParams(size, ViewGroup.LayoutParams.MATCH_PARENT);
         }
     }
 

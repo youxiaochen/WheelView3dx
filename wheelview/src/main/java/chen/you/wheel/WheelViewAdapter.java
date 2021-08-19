@@ -1,4 +1,4 @@
-package chen.you.adapter;
+package chen.you.wheel;
 
 import android.view.View;
 import android.view.ViewGroup;
@@ -21,21 +21,16 @@ class WheelViewAdapter extends RecyclerView.Adapter<WheelViewHolder> {
      */
     final int itemSize;
     /**
-     * wheelview 滑动时上或下的空白数量
+     * wheelview 滑动时上和下空白总数量
      */
-    final int itemCount;
-    /**
-     * wheelview 滑动时上或下空白总数量
-     */
-    private final int totalItemCount;
+    private final int totalShowItemCount;
 
     WheelView.WheelAdapter adapter;
 
-    WheelViewAdapter(int orientation, int itemSize, int itemCount) {
+    WheelViewAdapter(int orientation, int itemSize, int showItemCount) {
         this.orientation = orientation;
         this.itemSize = itemSize;
-        this.itemCount = itemCount;
-        this.totalItemCount = itemCount * 2;
+        this.totalShowItemCount = showItemCount * 2;
     }
 
     @Override
@@ -44,7 +39,7 @@ class WheelViewAdapter extends RecyclerView.Adapter<WheelViewHolder> {
 
     @Override
     public int getItemCount() {
-        return totalItemCount + (adapter == null ? 0 : adapter.getItemCount());
+        return totalShowItemCount + (adapter == null ? 0 : adapter.getItemCount());
     }
 
     @Override

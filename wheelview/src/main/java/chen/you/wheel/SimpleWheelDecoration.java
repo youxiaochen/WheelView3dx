@@ -1,4 +1,4 @@
-package chen.you.adapter;
+package chen.you.wheel;
 
 import android.graphics.Canvas;
 import android.graphics.Paint;
@@ -27,8 +27,9 @@ class SimpleWheelDecoration extends WheelDecoration {
 
     private final WheelViewAdapter adapter;
 
-    SimpleWheelDecoration(WheelViewAdapter adapter, int gravity, int textColor, int textColorCenter, float textSize, int dividerColor, int dividerSize) {
-        super(adapter.itemCount, adapter.itemSize, gravity);
+    SimpleWheelDecoration(WheelViewAdapter adapter, int itemCount, float itemDegree, int gravity,
+                          int textColor, int textColorCenter, float textSize, int dividerColor, int dividerSize) {
+        super(itemCount, itemDegree, adapter.itemSize, gravity);
         this.textColor = textColor;
         this.textColorCenter = textColorCenter;
         this.dividerSize = dividerSize;

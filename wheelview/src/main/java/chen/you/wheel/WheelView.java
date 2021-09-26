@@ -187,6 +187,7 @@ public class WheelView extends FrameLayout {
 
     public int getCurrentItem() {
         int adapterCount = layoutManager.getItemCount();
+        if (adapterCount == 0) return IDLE_POSITION;
         if (wheelDecoration.centerItemPosition >= adapterCount) return 0; //如果当前位置大于整个适配器大小,刷新时RecyclerView会回到第0个位置
         int wheelCount = adapterCount - itemCount * 2;
         if (wheelDecoration.centerItemPosition >= wheelCount) {

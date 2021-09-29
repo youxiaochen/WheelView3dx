@@ -47,6 +47,10 @@ public class WheelView extends FrameLayout {
      */
     private int itemCount = 3;
     /**
+     * 由于旋转会导致Wheelview部分内容空白,因此减少实际显示的itemCount
+     */
+    private int showItemCount;
+    /**
      * item大小
      */
     private int itemSize = 90;
@@ -129,7 +133,7 @@ public class WheelView extends FrameLayout {
         //item在6个或者以上时,旋转后的高度会相差大于2, 因此3-5个时的效果最好,不会留过多的空白区域
         //此时防止WheelView旋转后的空白区域过多,可以适当修改大小, 适配器中头和尾添加的itemCount - 1
         boolean isGreaterThan = itemCount > 2;
-        int showItemCount = isGreaterThan ? itemCount - 1 : itemCount;
+        showItemCount = isGreaterThan ? itemCount - 1 : itemCount;
         int totalItemSize = (showItemCount * 2 + 1) * itemSize;
         if (isGreaterThan) {
             //RecyclerView高度或者水平时的宽度添加2个像素是为了在减掉显示的一个item时,
@@ -189,8 +193,8 @@ public class WheelView extends FrameLayout {
         int adapterCount = layoutManager.getItemCount();
         if (adapterCount == 0) return IDLE_POSITION;
         if (wheelDecoration.centerItemPosition >= adapterCount) return 0; //如果当前位置大于整个适配器大小,刷新时RecyclerView会回到第0个位置
-        int wheelCount = adapterCount - itemCount * 2;
-        if (wheelDecoration.centerItemPosition >= wheelCount) {
+        int wheelCount = adapterCount - showItemCount * 2;
+        if (wheelDecoration.centerItemPosition >= wheelCount) {//一般不会越界
             return wheelCount -1;
         }
         return wheelDecoration.centerItemPosition;

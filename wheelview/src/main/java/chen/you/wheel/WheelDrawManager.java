@@ -142,7 +142,6 @@ public class WheelDrawManager extends WheelView.DrawManager {
 
         float z = (float) (wheelRadio * (1 - Math.abs(Math.cos(Math.toRadians(rotateDegreeY)))));
         camera.translate(0, 0, z);
-
         camera.rotateY(rotateDegreeY);
         camera.getMatrix(matrix);
         camera.restore();

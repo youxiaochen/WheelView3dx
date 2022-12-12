@@ -3,7 +3,7 @@ package chen.you.wheel;
 import android.graphics.Canvas;
 
 /**
- * 普通绘制管理类
+ * 普通绘制管理类,不处理旋转
  * Created by you on 2017/3/20.
  * 作QQ:86207610
  */

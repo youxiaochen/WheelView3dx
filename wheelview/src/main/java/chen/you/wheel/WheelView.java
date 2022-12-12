@@ -1,262 +1,293 @@
 package chen.you.wheel;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
-import android.content.res.TypedArray;
 import android.database.DataSetObserver;
+import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.Rect;
 import android.util.AttributeSet;
-import android.widget.FrameLayout;
+import android.util.Log;
+import android.view.View;
+import android.view.ViewGroup;
 
+import androidx.annotation.NonNull;
+import androidx.core.view.ViewCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.LinearSnapHelper;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
- * Created by you on 2019/9/25.
- * 作QQ:86207610 
+ * 真正的3D WheelView
+ * Created by you on 2017/3/20.
+ * 作QQ:86207610
  */
-
-public class WheelView extends FrameLayout {
-    /**
-     * 无效的位置
-     */
+public final class WheelView extends ViewGroup {
+    //无效的位置
     public static final int IDLE_POSITION = -1;
-    /**
-     * 垂直与水平布局两种状态
-     */
-    public static final int WHEEL_VERTICAL = 1;
-    public static final int WHEEL_HORIZONTAL = 2;
-    /**
-     * item color
-     */
-    private int textColor = Color.BLACK;
-    /**
-     * 中心item颜色
-     */
-    private int textColorCenter = Color.RED;
-    /**
-     * 分割线颜色
-     */
-    private int dividerColor = Color.BLACK;
-    /**
-     * 文本大小
-     */
-    private float textSize = 36.f;
-    /**
-     * item数量
-     */
-    private int itemCount = 3;
-    /**
-     * 由于旋转会导致Wheelview部分内容空白,因此减少实际显示的itemCount
-     */
-    private int showItemCount;
-    /**
-     * item大小
-     */
-    private int itemSize = 90;
-    /**
-     * 分割线之间距离
-     */
-    private int dividerSize = 90;
-    /**
-     * 布局方向
-     */
-    private int orientation = WHEEL_VERTICAL;
-    /**
-     * 对齐方式
-     */
-    private int gravity = WheelDecoration.GRAVITY_CENTER;
-
-    /**
-     * recyclerView
-     */
+    //没有指定宽或高时的默认大小
+    private static final int DEF_SIZE = WheelParams.dp2px(128);
+    //WheelView相关参数
+    private WheelParams mWheelParams;
     private RecyclerView mRecyclerView;
-    private LinearLayoutManager layoutManager;
-    /**
-     * wheel 3d
-     */
-    private WheelDecoration wheelDecoration;
-    private WheelViewAdapter wheelAdapter;
-    /**
-     * adapter
-     */
-    private WheelAdapter mAdapter;
-    private WheelViewObserver observer;
+    private LinearLayoutManager mLayoutManager;
+    //item绘制器
+    private DrawManager mDrawManager;
+    //RecyclerView adapter并item绘制画笔
+    private WheelViewAdapter mWheelViewAdapter;
+    //WheelView Adapter
+    private Adapter mAdapter;
+    private WheelViewObserver mObserver;
+    //滑动监听用于selectedIndex回调
+    private OnScrollListener mScrollListener;
 
-    private WheelItemClickListener itemClickListener;
-
-    private int lastSelectedPosition = IDLE_POSITION;
-    private int selectedPosition = IDLE_POSITION;
+    //当前选中的项
+    private int mSelectedPosition = IDLE_POSITION;
+    //itemSelected
+    private List<OnItemSelectedListener> mSelectedListeners;
+    //WheelView是否已经附着到窗体中
+    private boolean hasAttachedToWindow = false;
 
     public WheelView(Context context) {
         super(context);
-        init(context, null);
+        initialize(context, null);
     }
 
     public WheelView(Context context, AttributeSet attrs) {
         super(context, attrs);
-        init(context, attrs);
+        initialize(context, attrs);
     }
 
     public WheelView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-        init(context, attrs);
+        initialize(context, attrs);
     }
 
-    private void init(Context context, AttributeSet attrs) {
-        if (attrs != null) {
-            TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.WheelView);
-            itemCount = a.getInt(R.styleable.WheelView_wheelItemCount, itemCount);
-            textColor = a.getColor(R.styleable.WheelView_wheelTextColor, textColor);
-            textColorCenter = a.getColor(R.styleable.WheelView_wheelTextColorCenter, textColorCenter);
-            dividerColor = a.getColor(R.styleable.WheelView_wheelDividerColor, dividerColor);
-            textSize = a.getDimension(R.styleable.WheelView_wheelTextSize, textSize);
-            itemSize = a.getDimensionPixelOffset(R.styleable.WheelView_wheelItemSize, itemSize);
-            dividerSize = a.getDimensionPixelOffset(R.styleable.WheelView_wheelDividerSize, dividerSize);
-            orientation = a.getInt(R.styleable.WheelView_wheelOrientation, orientation);
-            gravity = a.getInt(R.styleable.WheelView_wheelGravity, gravity);
-            a.recycle();
-        }
-        initRecyclerView(context);
-    }
-
-    private void initRecyclerView(Context context) {
+    private void initialize(Context context, AttributeSet attrs) {
+        mWheelParams = new WheelParams.Builder(context, attrs).build();
         mRecyclerView = new RecyclerView(context);
-        mRecyclerView.setOverScrollMode(OVER_SCROLL_NEVER);
-        layoutManager = new LinearLayoutManager(context);
-        layoutManager.setOrientation(orientation == WHEEL_VERTICAL ? LinearLayoutManager.VERTICAL : LinearLayoutManager.HORIZONTAL);
-        mRecyclerView.setLayoutManager(layoutManager);
+        mRecyclerView.setId(ViewCompat.generateViewId());
+        mRecyclerView.setDescendantFocusability(FOCUS_BEFORE_DESCENDANTS);
+        mRecyclerView.setHasFixedSize(true);
+
+        mLayoutManager = new LinearLayoutManager(context, mWheelParams.getLayoutOrientation(), false);
+        mRecyclerView.setLayoutManager(mLayoutManager);
         //让滑动结束时都能定到中心位置
         new LinearSnapHelper().attachToRecyclerView(mRecyclerView);
-        //通过计算,在item3个或者以上的时候,旋转后的WheelView高度会比实际高度小一个item的大小
-        //计算方式可以详见博客中的原理图,计算出三角形的腰长即为半径
-        //item在6个或者以上时,旋转后的高度会相差大于2, 因此3-5个时的效果最好,不会留过多的空白区域
-        //此时防止WheelView旋转后的空白区域过多,可以适当修改大小, 适配器中头和尾添加的itemCount - 1
-        boolean isGreaterThan = itemCount > 2;
-        showItemCount = isGreaterThan ? itemCount - 1 : itemCount;
-        int totalItemSize = (showItemCount * 2 + 1) * itemSize;
-        if (isGreaterThan) {
-            //RecyclerView高度或者水平时的宽度添加2个像素是为了在减掉显示的一个item时,
-            // 超出RecyclerView显示区域刚好可以再显示头部一个和尾部一个item
-            totalItemSize += 2;
-        }
-        float itemDegree = 180.f / (itemCount * 2 + 1);
-        super.addView(mRecyclerView, WheelUtils.createLayoutParams(orientation, totalItemSize));
-        wheelAdapter = new WheelViewAdapter(orientation, itemSize, showItemCount);
-        wheelDecoration = new SimpleWheelDecoration(wheelAdapter, showItemCount, itemDegree, gravity, textColor, textColorCenter, textSize, dividerColor, dividerSize);
-        mRecyclerView.addItemDecoration(wheelDecoration);
-        mRecyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
-            @Override
-            public void onScrollStateChanged(RecyclerView recyclerView, int newState) {
-                if (listener == null || wheelDecoration == null) return;
-                if (wheelDecoration.centerItemPosition == IDLE_POSITION || newState != RecyclerView.SCROLL_STATE_IDLE) return;
-                selectedPosition = wheelDecoration.centerItemPosition;
-                if (selectedPosition != lastSelectedPosition) {
-                    listener.onItemSelected(WheelView.this, selectedPosition);
-                    lastSelectedPosition = selectedPosition;
-                }
-            }
-        });
-        mRecyclerView.setAdapter(wheelAdapter);
+
+        mWheelViewAdapter = new WheelViewAdapter(mWheelParams);
+        mRecyclerView.setAdapter(mWheelViewAdapter);
+        mDrawManager = new WheelDrawManager();
+        mDrawManager.setWheelParams(mWheelParams);
+
+        mScrollListener = new OnScrollListener();
+        super.addView(mRecyclerView, -1, createLayoutParams());
     }
 
-    public void setAdapter(WheelAdapter adapter) {
+    @Override
+    public void addView(View child, int index, LayoutParams params) {
+        throw new UnsupportedOperationException("addView(View...) is not supported in WheelView");
+    }
+
+    @Override
+    public void removeView(View child) {
+        throw new UnsupportedOperationException("removeView(View) is not supported in WheelView");
+    }
+
+    @Override
+    public void removeViewAt(int index) {
+        throw new UnsupportedOperationException("removeViewAt(int) is not supported in WheelView");
+    }
+
+    @Override
+    public void removeAllViews() {
+        throw new UnsupportedOperationException("removeAllViews() is not supported in WheelView");
+    }
+
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        int paddingLeftRight = getPaddingLeft() + getPaddingRight();
+        int paddingTopBottom = getPaddingTop() + getPaddingBottom();
+        int childState = mRecyclerView.getMeasuredState();
+        LayoutParams childParams = mRecyclerView.getLayoutParams();
+        LayoutParams layoutParams = getLayoutParams();
+        if (mWheelParams.isVertical()) {
+            //非精准测量给默认值且不是linearlayout的layout_weight或者ConstraintLayout等之类的权重布局
+            if (MeasureSpec.getMode(widthMeasureSpec) != MeasureSpec.EXACTLY
+                    && (layoutParams != null && layoutParams.width != 0)) {
+                childParams.width = Math.max(DEF_SIZE, getSuggestedMinimumWidth() - paddingLeftRight);
+            }
+        } else {
+            if (MeasureSpec.getMode(heightMeasureSpec) != MeasureSpec.EXACTLY
+                    && (layoutParams != null && layoutParams.height != 0)) {
+                childParams.height = Math.max(DEF_SIZE, getSuggestedMinimumHeight() - paddingTopBottom);
+            }
+        }
+        measureChild(mRecyclerView, widthMeasureSpec, heightMeasureSpec);
+        int width = mRecyclerView.getMeasuredWidth() + paddingLeftRight;
+        int height = mRecyclerView.getMeasuredHeight() + paddingTopBottom;
+        setMeasuredDimension(resolveSizeAndState(width, widthMeasureSpec, childState),
+                resolveSizeAndState(height, heightMeasureSpec, childState));
+    }
+
+    @Override
+    protected void onLayout(boolean changed, int l, int t, int r, int b) {
+        int width = mRecyclerView.getMeasuredWidth();
+        int height = mRecyclerView.getMeasuredHeight();
+        int left = getPaddingLeft();
+        int top = getPaddingTop();
+        mRecyclerView.layout(left, top, left + width, top + height);
+    }
+
+    @Override
+    protected void onAttachedToWindow() {
+        super.onAttachedToWindow();
+        hasAttachedToWindow = true;
+        mRecyclerView.addItemDecoration(mDrawManager);
+        mRecyclerView.addOnScrollListener(mScrollListener);
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        super.onDetachedFromWindow();
+        hasAttachedToWindow = false;
+        mRecyclerView.removeOnScrollListener(mScrollListener);
+        mRecyclerView.removeItemDecoration(mDrawManager);
+    }
+
+    /**
+     *  创建WheelView的LayoutParams
+     */
+    private LayoutParams createLayoutParams() {
+        if (mWheelParams.isVertical())
+            return new LayoutParams(LayoutParams.MATCH_PARENT, mWheelParams.getTotalItemSize());
+        return new LayoutParams(mWheelParams.getTotalItemSize(), LayoutParams.MATCH_PARENT);
+    }
+
+    @SuppressLint("NotifyDataSetChanged")
+    private void onDataSetChanged() {
+        mWheelViewAdapter.notifyDataSetChanged();
+    }
+
+    /**
+     * 分发selected事件监听
+     */
+    private void dispatchOnSelectIndexChanged(int index) {
+        if (mSelectedPosition == index) return;
+        mSelectedPosition = index;
+        if (mSelectedListeners != null) {
+            for (OnItemSelectedListener listener : mSelectedListeners) {
+                listener.onItemSelected(this, index);
+            }
+        }
+    }
+
+    /**
+     * 设置适配器, 有实现的通用的 {@link WheelAdapter } , {@link Adapter}
+     * @param adapter
+     */
+    public void setAdapter(Adapter adapter) {
         if (mAdapter != null) {
             mAdapter.setWheelViewObserver(null);
         }
         mAdapter = adapter;
         if (mAdapter != null) {
-            if (observer == null) {
-                observer = new WheelViewObserver();
+            if (mObserver == null) {
+                mObserver = new WheelViewObserver();
             }
-            mAdapter.setWheelViewObserver(observer);
-            this.selectedPosition = -1;
-            this.lastSelectedPosition = -1;
-            this.wheelAdapter.adapter = adapter;
-            this.wheelAdapter.notifyDataSetChanged();
+            mAdapter.setWheelViewObserver(mObserver);
+            this.mSelectedPosition = IDLE_POSITION;
+            this.mWheelViewAdapter.adapter = adapter;
+            onDataSetChanged();
+            mLayoutManager.scrollToPositionWithOffset(0, 0);
         }
-    }
-
-    public WheelAdapter getAdapter() {
-        return mAdapter;
-    }
-
-    private void dataSetChanged() {
-        this.wheelAdapter.notifyDataSetChanged();
-    }
-
-    public void setCurrentItem(int position) {
-        layoutManager.scrollToPositionWithOffset(position, 0);
-    }
-
-    public int getCurrentItem() {
-        int adapterCount = layoutManager.getItemCount();
-        if (adapterCount == 0) return IDLE_POSITION;
-        if (wheelDecoration.centerItemPosition >= adapterCount) return 0; //如果当前位置大于整个适配器大小,刷新时RecyclerView会回到第0个位置
-        int wheelCount = adapterCount - showItemCount * 2;
-        if (wheelDecoration.centerItemPosition >= wheelCount) {//一般不会越界
-            return wheelCount -1;
-        }
-        return wheelDecoration.centerItemPosition;
-    }
-
-    private OnItemSelectedListener listener;
-    private OnItemClickListener clickListener;
-
-    public void setOnItemSelectedListener(OnItemSelectedListener listener) {
-        this.listener = listener;
     }
 
     /**
-     * item selected
+     * 设置params, 用于代码生成WheelView时
+     * @param wheelParams 新的参数 详见{@link WheelParams.Builder}
+     */
+    public void setWheelParams(WheelParams wheelParams) {
+        if (mWheelParams == wheelParams || mWheelParams == null) return;
+        mRecyclerView.removeItemDecoration(mDrawManager);
+        mWheelParams = wheelParams;
+        mDrawManager.setWheelParams(mWheelParams);
+        mWheelViewAdapter = new WheelViewAdapter(mWheelParams);
+        mWheelViewAdapter.adapter = mAdapter;
+        mLayoutManager.setOrientation(mWheelParams.getLayoutOrientation());
+        mRecyclerView.setAdapter(mWheelViewAdapter);
+        if (hasAttachedToWindow) {
+            mRecyclerView.addItemDecoration(mDrawManager);
+        }
+        mRecyclerView.setLayoutParams(createLayoutParams());
+    }
+
+    /**
+     * 设置DrawManager
+     */
+    public void setDrawManager(DrawManager drawManager) {
+        if (drawManager == null) return;
+        mRecyclerView.removeItemDecoration(mDrawManager);
+        mDrawManager = drawManager;
+        mDrawManager.setWheelParams(mWheelParams);
+        if (hasAttachedToWindow) {
+            mRecyclerView.addItemDecoration(mDrawManager);
+        }
+        mRecyclerView.setLayoutParams(createLayoutParams());
+    }
+
+    /**
+     * 设置当前item位置
+     */
+    public void setCurrentItem(int position) {
+        mLayoutManager.scrollToPositionWithOffset(position, 0);
+    }
+
+    public void addOnItemSelectedListener(OnItemSelectedListener listener) {
+        if (mSelectedListeners == null) mSelectedListeners = new ArrayList<>();
+        mSelectedListeners.add(listener);
+    }
+
+    public void removeOnItemSelectedListener(OnItemSelectedListener listener) {
+        if (mSelectedListeners != null) {
+            mSelectedListeners.remove(listener);
+        }
+    }
+
+    public int getCurrentItem() {
+        return mDrawManager.centerItemPosition;
+    }
+
+    public WheelParams getWheelParams() {
+        return mWheelParams;
+    }
+
+    public DrawManager getDrawManager() {
+        return mDrawManager;
+    }
+
+    public Adapter getAdapter() {
+        return mAdapter;
+    }
+
+    /** -------------------------- inner class --------------------------*/
+
+    /**
+     * Item selected
      */
     public interface OnItemSelectedListener {
+
         void onItemSelected(WheelView wheelView, int index);
     }
 
     /**
-     * 设置点击
-     * @param listener
+     * open WheelView Adapter
      */
-    public void setOnItemClickListener(OnItemClickListener listener) {
-        if (itemClickListener == null) {
-            itemClickListener = new WheelItemClickListener(getContext()) {
-                @Override
-                void onItemClick(int position) {
-                    int currentPosition = position - itemCount;
-                    if (clickListener != null && currentPosition == getCurrentItem()) {
-                        clickListener.onItemClick(WheelView.this, currentPosition);
-                    }
-                }
-            };
-            mRecyclerView.addOnItemTouchListener(itemClickListener);
-        }
-        this.clickListener = listener;
-    }
-
-    /**
-     * item点击
-     */
-    public interface OnItemClickListener {
-        void onItemClick(WheelView wheelView, int centerPosition);
-    }
-
-    private class WheelViewObserver extends DataSetObserver {
-        @Override
-        public void onChanged() {
-            dataSetChanged();
-        }
-
-        @Override
-        public void onInvalidated() {
-            dataSetChanged();
-        }
-    }
-
-    /**
-     * wheel adapter
-     */
-    public static abstract class WheelAdapter {
+    public static abstract class Adapter {
 
         private DataSetObserver wheelObserver;
 
@@ -266,10 +297,9 @@ public class WheelView extends FrameLayout {
             }
         }
 
-        protected abstract int getItemCount();
-
-        protected abstract String getItem(int index);
-
+        /**
+         * 可以根据实际需求, 刷新后{@link #setCurrentItem(int) 0}
+         */
         public final void notifyDataSetChanged() {
             synchronized (this) {
                 if (wheelObserver != null) {
@@ -277,6 +307,235 @@ public class WheelView extends FrameLayout {
                 }
             }
         }
+
+        protected abstract int getItemCount();
+
+        /**
+         * 绘制内容区域
+         * @param c Canvas
+         * @param p TextPaint
+         * @param cf 居中时根据中心Y坐标 - textHeight
+         * @param itemRect 绘制内容区域
+         * @param position adapter index
+         * @param params WheelParams
+         */
+        protected abstract void drawItem(Canvas c, Paint p, float cf, Rect itemRect, int position, WheelParams params);
+
+        /**
+         * 绘制分割线
+         * @param c Canvas
+         * @param p Paint
+         * @param wvRect Wheel Rect
+         * @param params WheelParams
+         */
+        protected void drawDivider(Canvas c, Paint p, Rect wvRect, WheelParams params) {
+            if (params.isVertical()) {
+                float dividerOff = (wvRect.height() - params.itemSize) / 2.0f;
+                float firstY = wvRect.top + dividerOff - params.dividerPadding;
+                c.drawLine(wvRect.left, firstY, wvRect.right, firstY, p);
+                float secondY = wvRect.bottom - dividerOff + params.dividerPadding;
+                c.drawLine(wvRect.left, secondY, wvRect.right, secondY, p);
+            } else {
+                float dividerOff = (wvRect.width() - params.itemSize) / 2.0f;
+                float firstX = wvRect.left + dividerOff - params.dividerPadding;
+                c.drawLine(firstX, wvRect.top, firstX, wvRect.bottom, p);
+                float secondX = wvRect.right - dividerOff + params.dividerPadding;
+                c.drawLine(secondX, wvRect.top, secondX, wvRect.bottom, p);
+            }
+        }
     }
 
+    /**
+     * 直接画文本适配器
+     */
+    public static abstract class WheelAdapter extends Adapter {
+
+        // item toString
+        protected abstract String getItemString(int position);
+
+        @Override
+        protected void drawItem(Canvas c, Paint p, float cf, Rect itemRect, int position, WheelParams params) {
+            String text = getItemString(position);
+            if (text == null) text = "";
+            c.drawText(text, itemRect.exactCenterX(), itemRect.exactCenterY() - cf, p);
+        }
+
+    }
+
+    /**
+     * Adapter观察者
+     */
+    private class WheelViewObserver extends DataSetObserver {
+        @Override
+        public void onChanged() {
+            onDataSetChanged();
+        }
+
+        @Override
+        public void onInvalidated() {
+            onDataSetChanged();
+        }
+    }
+
+    /**
+     * WheelView滑动监听
+     */
+    private class OnScrollListener extends RecyclerView.OnScrollListener {
+        @Override
+        public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int newState) {
+            if (newState != RecyclerView.SCROLL_STATE_IDLE) return;
+            if (mDrawManager.centerItemPosition == IDLE_POSITION) return;
+            dispatchOnSelectIndexChanged(mDrawManager.centerItemPosition);
+        }
+    }
+
+    /**
+     * Wheel Item绘制管理
+     */
+    public static abstract class DrawManager extends RecyclerView.ItemDecoration {
+        //Wheel相关参数
+        WheelParams wheelParams;
+        //中心位置
+        int centerItemPosition = IDLE_POSITION;
+        //整个WheelView的显示区域
+        final Rect wvRect = new Rect();
+        //item显示区域
+        final Rect itemRect = new Rect();
+        //中心偏移值即为itemSize / 2
+        float centerItemScrollOff;
+
+        void setWheelParams(WheelParams params) {
+            params.setItemShowOrder(getShowOrder());
+            this.wheelParams = params;
+            centerItemScrollOff = params.itemSize / 2.f;
+        }
+
+        @Override
+        public void onDraw(@NonNull Canvas c, @NonNull RecyclerView parent, @NonNull RecyclerView.State state) {
+            if (wheelParams == null) return;
+            if (!(parent.getLayoutManager() instanceof LinearLayoutManager)) return;
+            if (!(parent.getAdapter() instanceof WheelItemPainter)) return;
+            LinearLayoutManager llm = (LinearLayoutManager) parent.getLayoutManager();
+            WheelItemPainter painter = (WheelItemPainter) parent.getAdapter();
+            wvRect.set(parent.getPaddingLeft(), parent.getPaddingTop(),
+                    parent.getWidth() - parent.getPaddingRight(),
+                    parent.getHeight() - parent.getPaddingBottom());
+            int startPosition = llm.findFirstVisibleItemPosition();
+            if (startPosition < 0) return;
+            int endPosition = llm.findLastVisibleItemPosition();
+            centerItemPosition = IDLE_POSITION;
+            for (int itemPosition = startPosition; itemPosition <= endPosition; itemPosition++) {
+                View itemView = llm.findViewByPosition(itemPosition);
+                if (itemView == null) continue;
+                int adapterPosition = parent.getChildAdapterPosition(itemView);
+                if (adapterPosition < wheelParams.getShowItemCount()) continue;//itemCount为空白项,不考虑
+                if (adapterPosition >= llm.getItemCount() - wheelParams.getShowItemCount()) break;//超过列表的也是空白项
+
+                itemRect.set(itemView.getLeft(), itemView.getTop(), itemView.getRight(), itemView.getBottom());
+                drawItem(painter, c, adapterPosition);
+            }
+            painter.drawDivider(c, wvRect);
+        }
+
+        //画item
+        abstract void drawItem(WheelItemPainter painter, Canvas c, int adapterPosition);
+
+        //item显示规则
+        abstract WheelParams.ItemShowOrder getShowOrder();
+    }
+
+    /**
+     * Wheel Item绘制器
+     */
+    interface WheelItemPainter {
+
+        //画item
+        void drawItem(Canvas c, Rect itemRect, int alpha, int position);
+
+        //画中心item
+        void drawCenterItem(Canvas c, Rect itemRect, int alpha, int position);
+
+        //画分割线
+        void drawDivider(Canvas c, Rect wvRect);
+    }
+
+    /**
+     * WheelView适配器代理
+     */
+    static class WheelViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> implements WheelItemPainter {
+        //wheel params
+        final WheelParams wheelParams;
+        //wheel adapter
+        Adapter adapter = null;
+
+        //text画笔
+        private final Paint textPaint;
+        //分割线Paint
+        private final Paint dividerPaint;
+        //画文本居中时文本画笔的中心位置, 画居中文字时
+        private final float textFontCenter;
+
+        WheelViewAdapter(WheelParams wheelParams) {
+            this.wheelParams = wheelParams;
+
+            textPaint = new Paint();
+            textPaint.setAntiAlias(true);
+            textPaint.setTextSize(wheelParams.textSize);
+            textPaint.setTextAlign(Paint.Align.CENTER);
+            Paint.FontMetrics fm = textPaint.getFontMetrics();
+            textFontCenter = (fm.bottom + fm.top) / 2.0f;
+
+            dividerPaint = new Paint();
+            dividerPaint.setAntiAlias(true);
+            dividerPaint.setStrokeWidth(wheelParams.dividerSize);
+            dividerPaint.setColor(wheelParams.dividerColor);
+        }
+
+        @Override
+        public int getItemCount() {
+            return wheelParams.getShowItemCount() * 2 + (adapter == null ? 0 : adapter.getItemCount());
+        }
+
+        @NonNull
+        @Override
+        public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            View view = new View(parent.getContext());
+            if (wheelParams.isVertical()) {
+                view.setLayoutParams(new LayoutParams(LayoutParams.MATCH_PARENT, wheelParams.itemSize));
+            } else {
+                view.setLayoutParams(new LayoutParams(wheelParams.itemSize, LayoutParams.MATCH_PARENT));
+            }
+            view.setVisibility(View.INVISIBLE); //不显示只留测量性能更忧
+            return new RecyclerView.ViewHolder(view) {};
+        }
+
+        @Override
+        public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
+        }
+
+        @Override
+        public void drawItem(Canvas c, Rect itemRect, int alpha, int position) {
+            if (adapter != null) {
+                textPaint.setColor(wheelParams.textColor);
+                textPaint.setAlpha(alpha);
+                adapter.drawItem(c, textPaint, textFontCenter, itemRect, position, wheelParams);
+            }
+        }
+
+        @Override
+        public void drawCenterItem(Canvas c, Rect itemRect, int alpha, int position) {
+            if (adapter != null) {
+                textPaint.setColor(wheelParams.textCenterColor);
+                textPaint.setAlpha(alpha);
+                adapter.drawItem(c, textPaint, textFontCenter, itemRect, position, wheelParams);
+            }
+        }
+
+        @Override
+        public void drawDivider(Canvas c, Rect wvRect) {
+            if (adapter != null) {
+                adapter.drawDivider(c, dividerPaint, wvRect, wheelParams);
+            }
+        }
+    }
 }

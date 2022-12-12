@@ -68,7 +68,7 @@
             android:layout_height="wrap_content"
             app:wheelItemCount="4"
             app:wheelItemSize="25dp"
-            app:wheelDividerSize="28dp"
+            app:wheelDividerSize="1dp"
             app:wheelGravity="left"
             app:wheelTextSize="18sp"/>
 
@@ -79,7 +79,7 @@
             android:layout_height="wrap_content"
             app:wheelItemCount="4"
             app:wheelItemSize="25dp"
-            app:wheelDividerSize="28dp"
+            app:wheelDividerSize="1dp"
             app:wheelGravity="center"
             app:wheelTextSize="18sp"/>
 
@@ -90,7 +90,7 @@
             android:layout_height="wrap_content"
             app:wheelItemCount="4"
             app:wheelItemSize="25dp"
-            app:wheelDividerSize="28dp"
+            app:wheelDividerSize="1dp"
             app:wheelGravity="right"
             app:wheelTextSize="18sp"/>
 
@@ -109,11 +109,16 @@
         android:layout_width="wrap_content"
         android:layout_height="60dp"
         android:layout_gravity="center_horizontal"
-        android:background="#ff00ff"
         app:wheelItemCount="3"
         app:wheelItemSize="30dp"
-        app:wheelDividerSize="32dp"
+        app:wheelDividerSize="1dp"
         app:wheelOrientation="horizontal"
         app:wheelTextSize="25sp"/>
+
+    <Button android:id="@+id/bt"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textAllCaps="false"
+        android:text="测试界面2"/>
 
 </LinearLayout>

@@ -1,15 +1,17 @@
 package chen.you.wheelviewtest;
 
 import androidx.appcompat.app.AppCompatActivity;
-import chen.you.wheel.WheelView;
 
+import android.content.Intent;
 import android.os.Bundle;
-import android.widget.ListView;
+import android.view.View;
 import android.widget.TextView;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import chen.you.wheel.WheelView;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -27,9 +29,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-
         setTitle("游小陈的博客");
-
         wv_city = findViewById(R.id.wv_city);
         wv_county = findViewById(R.id.wv_county);
         wv_number = findViewById(R.id.wv_number);
@@ -43,25 +43,25 @@ public class MainActivity extends AppCompatActivity {
 
         cityAdapter = new CityAdapter();
         wv_city.setAdapter(cityAdapter);
-        wv_city.setOnItemSelectedListener(new WheelView.OnItemSelectedListener() {
+        wv_city.addOnItemSelectedListener(new WheelView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(WheelView wheelView, int index) {
-                tv_city.setText("市: "+cityAdapter.getItem(index));
+                tv_city.setText("市: "+cityAdapter.getItemString(index));
                 List<String> strs = Arrays.asList(TestDatas.AREAS[index]);
                 countyAdapter.strs.clear();
                 countyAdapter.strs.addAll(strs);
                 countyAdapter.notifyDataSetChanged();
                 wv_county.setCurrentItem(0);
-                tv_county.setText("县: "+countyAdapter.getItem(0));
+                tv_county.setText("县: "+countyAdapter.getItemString(0));
             }
         });
 
         /* 区滑轮控件 */
 
-        wv_county.setOnItemSelectedListener(new WheelView.OnItemSelectedListener() {
+        wv_county.addOnItemSelectedListener(new WheelView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(WheelView wheelView, int index) {
-                tv_county.setText("县: "+countyAdapter.getItem(index));
+                tv_county.setText("县: "+countyAdapter.getItemString(index));
             }
         });
 
@@ -76,7 +76,7 @@ public class MainActivity extends AppCompatActivity {
             }
 
             @Override
-            protected String getItem(int index) {
+            protected String getItemString(int position) {
                 return "游小陈";
             }
         });
@@ -89,11 +89,11 @@ public class MainActivity extends AppCompatActivity {
             }
 
             @Override
-            protected String getItem(int index) {
-                return String.valueOf(index);
+            protected String getItemString(int position) {
+                return String.valueOf(position);
             }
         });
-        wv_number.setOnItemSelectedListener(new WheelView.OnItemSelectedListener() {
+        wv_number.addOnItemSelectedListener(new WheelView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(WheelView wheelView, int index) {
                 tv_number.setText("水平布局"+index);
@@ -101,6 +101,12 @@ public class MainActivity extends AppCompatActivity {
         });
         wv_number.setCurrentItem(88);
 
+        findViewById(R.id.bt).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startActivity(new Intent(MainActivity.this, TwoActivity.class));
+            }
+        });
     }
 
 
@@ -112,8 +118,8 @@ public class MainActivity extends AppCompatActivity {
         }
 
         @Override
-        protected String getItem(int index) {
-            return TestDatas.NAMES[index];
+        protected String getItemString(int position) {
+            return TestDatas.NAMES[position];
         }
     }
 
@@ -131,8 +137,8 @@ public class MainActivity extends AppCompatActivity {
         }
 
         @Override
-        protected String getItem(int index) {
-            return strs.get(index);
+        protected String getItemString(int position) {
+            return strs.get(position);
         }
     }
 
